@@ -1,0 +1,138 @@
+{% extends "_shell.html" %}
+{% set section = 'records' %}
+{% block title %}Records{% endblock %}
+{% block topbar_title %}Records{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div>
+    <h1>Records</h1>
+    <p class="lede">The violent incident log this premises keeps under
+      California Labor Code 6401.9. Each record stays here five years.</p>
+    <p class="standing-count">
+      {{ counts.total }} record{{ "s" if counts.total != 1 }}.
+      <strong>{{ counts.needs_finishing }} need{{ "s" if counts.needs_finishing == 1 }} finishing.</strong>
+      {% if counts.purged %}{{ counts.purged }} purged after five years.{% endif %}
+    </p>
+  </div>
+</div>
+
+<form class="finder" method="get" action="{{ url_for('admin.incident_list') }}">
+  <div class="finder-row">
+    <label for="text">Search what people wrote</label>
+    <input type="search" id="text" name="text" value="{{ query.text }}"
+           placeholder="a word from the description, a name, a record number">
+  </div>
+  <div class="finder-row finder-grid">
+    <span>
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        {% for value, label in statuses %}
+        <option value="{{ value }}" {% if query.status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </span>
+    <span>
+      <label for="incident_type">Type of incident (G)</label>
+      <select id="incident_type" name="incident_type">
+        <option value="">Any type</option>
+        {% for value, label, _quote in incident_types %}
+        <option value="{{ value }}" {% if query.incident_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </span>
+    <span>
+      <label for="circumstance">Circumstance (E)</label>
+      <select id="circumstance" name="circumstance">
+        <option value="">Any circumstance</option>
+        {% for value, label, _quote in circumstance_options %}
+        <option value="{{ value }}" {% if query.circumstance == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </span>
+    <span>
+      <label for="date_from">On or after</label>
+      <input type="date" id="date_from" name="date_from" value="{{ query.date_from }}">
+    </span>
+    <span>
+      <label for="date_to">On or before</label>
+      <input type="date" id="date_to" name="date_to" value="{{ query.date_to }}">
+    </span>
+  </div>
+  <div class="finder-actions">
+    <button class="btn btn-brand" type="submit">Find</button>
+    {% if query.is_filtered %}
+    <a class="quiet-link" href="{{ url_for('admin.incident_list') }}">Clear every filter</a>
+    {% endif %}
+    <a class="quiet-link" href="{{ url_for('exports.export_whole_log_csv') }}">Export the whole log (CSV)</a>
+    <a class="quiet-link" href="{{ url_for('exports.export_whole_log_json') }}">and as JSON</a>
+  </div>
+</form>
+
+{% if incidents %}
+<ol class="records">
+  {% for incident in incidents %}
+  <li class="record {% if incident.is_purged %}record-purged{% elif incident.completed %}record-done{% else %}record-todo{% endif %}">
+    <div class="record-gutter">
+      <span class="record-date">{{ incident.occurred_at | day }}</span>
+      <span class="record-clock">{{ incident.occurred_at | clock }}</span>
+      <span class="record-no">{{ incident.incident_id }}</span>
+    </div>
+    <div class="record-body">
+      <p class="record-status">
+        {% if incident.is_purged %}
+          <span class="pill pill-purged">Purged after five years</span>
+        {% elif incident.completed %}
+          <span class="pill pill-done">Complete</span>
+        {% else %}
+          <span class="pill pill-todo">Needs finishing</span>
+          <span class="pill-note">{{ incident.missing_statute_fields() | length }} of the nine fields are still empty</span>
+        {% endif %}
+        {% if amendments[incident.incident_id] > 1 %}
+        <span class="pill-note">{{ amendments[incident.incident_id] - 1 }} amendment{{ "s" if amendments[incident.incident_id] != 2 }}</span>
+        {% endif %}
+      </p>
+      <p class="record-where">
+        {{ incident.location }}{% if sites.get(incident.premises_id) %}, {{ sites[incident.premises_id].name }}{% endif %}
+      </p>
+      {% if incident.description %}
+      <p class="record-gist">{{ incident.description[:180] }}{% if incident.description | length > 180 %}...{% endif %}</p>
+      {% else %}
+      <p class="record-gist record-gist-empty">No description has been written for this record.</p>
+      {% endif %}
+      <p class="record-clip">Clip: {{ incident.clip_status }}</p>
+      <p class="record-actions">
+        <a href="{{ url_for('admin.edit_form', incident_id=incident.incident_id) }}">Open</a>
+        <a href="{{ url_for('exports.export_log_document', incident_id=incident.incident_id) }}">Statutory log</a>
+        <a href="{{ url_for('exports.export_pack', incident_id=incident.incident_id) }}">Evidence pack</a>
+        <a href="{{ url_for('exports.export_pack_pdf', incident_id=incident.incident_id) }}">Pack as PDF</a>
+      </p>
+    </div>
+  </li>
+  {% endfor %}
+</ol>
+{% elif query.is_filtered %}
+<div class="empty-state">
+  <h2>Nothing matches that.</h2>
+  <p>{{ counts.total }} record{{ "s" if counts.total != 1 }} are in the book;
+    none of them match every filter you set at once. Take one filter off and
+    try again.</p>
+  <p><a class="quiet-link" href="{{ url_for('admin.incident_list') }}">Clear every filter</a></p>
+</div>
+{% else %}
+<div class="empty-state">
+  <h2>The book is empty, which is the right way for it to start.</h2>
+  <p>A record appears here the moment somebody presses the button at the
+    counter. It arrives half written on purpose: the date, the time, the
+    camera's location and the clip are filled in, and the nine questions
+    Labor Code 6401.9(d)(2) asks are left for whoever is ready to answer
+    them.</p>
+  <p>Nothing here is invented. If no incident has happened, this page stays
+    empty.</p>
+  <p>
+    <a class="quiet-link" href="{{ url_for('capture.practice_screen') }}">Try a practice press</a>
+    <a class="quiet-link" href="{{ url_for('manage.settings') }}">Set up the premises</a>
+  </p>
+</div>
+{% endif %}
+{% endblock %}

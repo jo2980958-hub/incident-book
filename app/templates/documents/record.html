@@ -1,0 +1,255 @@
+<!doctype html>
+{#- One template, two documents. `kind` is "log" or "pack"; the differences
+    are the masthead handling line, whether the free text was redacted, and
+    whether the manifest sheet is present. Everything else is identical on
+    purpose, so the two documents about one incident cannot disagree. -#}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }} {{ incident.incident_id }}{% if premises.name %} for {{ premises.name }}{% endif %}</title>
+  <link rel="stylesheet" href="/static/record.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="handling">California Labor Code 6401.9(d)(2). {{ handling }}</p>
+    <p class="issuer">
+      {% if premises.is_named %}
+        {{ premises.name }}{% if premises.legal_entity %} ({{ premises.legal_entity }}){% endif %}<br>
+        {% for line in premises.address_lines() %}{{ line }}<br>{% endfor %}
+        {% if premises.establishment_id %}Establishment ID {{ premises.establishment_id }}{% endif %}
+      {% else %}
+        Premises not recorded. No business name or address has been entered in
+        this installation, so none is printed here.
+      {% endif %}
+    </p>
+  </div>
+  <dl class="identity">
+    <div><dt>Record no.</dt><dd class="record-no">{{ incident.incident_id }}</dd></div>
+    <div><dt>Form</dt><dd class="form-id">{{ form_id }}</dd></div>
+    <div><dt>Exhibits</dt><dd>{{ exhibit_range }}</dd></div>
+    <div><dt>Prepared</dt><dd>{{ generated_display }}</dd></div>
+    <div><dt>Revision</dt><dd>{{ revision }} ({{ supersedes }})</dd></div>
+  </dl>
+</header>
+
+<section class="provenance">
+  <h2>How this record was produced</h2>
+  <dl>
+    <dt>Source system</dt>
+    <dd>Ring camera, device ID {{ incident.device_id }}. Registered location:
+      {{ incident.location or "not recorded" }}.
+      {% if device.covers %}Covers {{ device.covers }}. {% endif %}
+      {% if device.does_not_cover %}Does not cover {{ device.does_not_cover }}.
+      {% else %}The shop has not recorded what this camera cannot see, so no
+      coverage limit is stated here.{% endif %}</dd>
+
+    <dt>Capture trigger</dt>
+    <dd>A member of staff pressed the capture button at
+      {{ incident.tapped_at | canonical(tz) }}.</dd>
+
+    <dt>Clip window</dt>
+    <dd>{% if incident.clip_window_start %}{{ window(incident.clip_window_start, incident.clip_window_end, tz) }},
+      requested at {{ incident.tapped_at | canonical(tz) }}.
+      {% else %}No clip window was requested for this record.{% endif %}
+      Clip status: {{ incident.clip_status }}.</dd>
+
+    <dt>Event source</dt>
+    <dd>Ring webhook. The HMAC-SHA256 signature was checked against the shared
+      secret at receipt before the payload was read.
+      {% if incident.event_ids %}Event {{ incident.event_ids | join(", ") }}.
+      {% else %}No device event is attached to this record.{% endif %}</dd>
+
+    <dt>Clock</dt>
+    <dd>Device clock, as supplied by the Ring API in epoch milliseconds. Drift
+      not measured: the API publishes no clock-synchronisation figure and this
+      software has no way to measure one. Times below are not corrected for
+      drift. {{ zone_note }}</dd>
+
+    <dt>Produced by</dt>
+    <dd>Incident Book {{ app_version }}, record renderer {{ app_version }},
+      {{ generated_display }}.
+      {% if drafted_letters %}Field{{ "s" if drafted_letters | length > 1 }}
+        {% for letter in drafted_letters %}({{ letter }}){{ ", " if not loop.last }}{% endfor %}
+        {{ "were" if drafted_letters | length > 1 else "was" }} drafted by software from
+        the answers given, and the gutter beside each says whether the completer
+        changed the drafted words or accepted them unchanged.
+      {% else %}No field on this record was drafted by software.{% endif %}</dd>
+
+    <dt>Completed by</dt>
+    <dd>{% if incident.completed_by %}{{ incident.completed_by }},
+      {{ incident.completed_by_title or "job title not recorded" }}. Signed below.
+      {% else %}Not yet completed. {{ missing | length }} statutory field{{ "s" if missing | length != 1 }}
+      remain{{ "" if missing | length != 1 else "s" }} unanswered.{% endif %}</dd>
+
+    <dt>Retention</dt>
+    <dd>Minimum five years, Labor Code 6401.9(f)(3). Earliest deletion
+      {{ incident.earliest_deletion | day(tz) }}.
+      {% if incident.purged_at %}This record was purged on
+      {{ incident.purged_at | canonical(tz) }}: the narrative fields and the
+      evidence files were removed and the dates, identifiers and hashes were
+      kept.{% endif %}</dd>
+
+    {% if kind == "log" %}
+    <dt>Omissions</dt>
+    <dd>Personal identifying information has been removed from the free-text
+      fields (C), (F) and (H) before printing, as Labor Code 6401.9(d)(1)(B)
+      requires of this log. {{ redaction_summary }} Each removal is shown in
+      the text as a named placeholder rather than as a gap. Field (I) is
+      printed in full because 6401.9(d)(2)(I) expressly requires the name and
+      job title of the person completing the log. The unredacted account is in
+      the evidence pack for this same record number, which is a separate
+      document.</dd>
+    {% else %}
+    <dt>Omissions</dt>
+    <dd>Nothing has been removed. This pack prints the free-text fields as
+      the completer wrote them, including anything identifying. The de-identified version required
+      by Labor Code 6401.9(d)(1)(B) is the statutory log for this same record
+      number, which is a separate document.</dd>
+    {% endif %}
+
+    <dt>Checking this record</dt>
+    <dd>{% if exhibits %}The last sheet lists every file with its full SHA-256
+      and the command to check it.{% else %}No files are attached to this
+      record, so there is no manifest sheet.{% endif %}</dd>
+  </dl>
+</section>
+
+{% for block in blocks %}
+<div class="block">
+  <div class="mark">
+    <span class="no">{{ block.no }}.</span>
+    <span class="basis">{{ block.basis }}</span>
+    {% if block.source %}<span class="src">{{ block.source }}</span>{% endif %}
+    {% if block.exhibit %}<span class="exh">{{ block.exhibit }}</span>{% endif %}
+  </div>
+  <div class="body"><p>{{ block.text }}</p></div>
+</div>
+{% endfor %}
+
+<h2>The nine fields of Labor Code 6401.9(d)(2), in the statute's order</h2>
+<table class="statutory">
+  <tbody>
+    {% for f in fields %}
+    <tr>
+      <th scope="row">
+        <span class="letter">({{ f.letter }})</span>
+        <span class="cite">{{ f.cite }}</span>
+        <span class="basis">{{ f.basis }}</span>
+        {% if f.source %}<span class="src">{{ f.source }}</span>{% endif %}
+        {% if f.provenance %}<span class="prov">{{ f.provenance }}</span>{% endif %}
+      </th>
+      <td>
+        <p class="ask">{{ f.ask }}</p>
+        <p class="quote">{{ f.quote }}</p>
+        {% if f.options %}
+        <ul class="options">
+          {% for label, chosen in f.options %}
+          <li>{% if chosen %}&#9746; <strong>{{ label }}</strong>{% else %}&#9744; {{ label }}{% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% if f.value %}<p class="value">{{ f.value }}</p>{% endif %}
+        {% if f.empty and f.empty_note %}
+        <p class="value empty">{{ f.empty_note }}</p>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if revisions %}
+<h2>Amendments to this record</h2>
+<table class="trail">
+  <thead>
+    <tr><th>When (earliest first)</th><th>Who</th><th>What changed</th></tr>
+  </thead>
+  <tbody>
+    {% for r in revisions %}
+    <tr>
+      <td class="tnum">{{ r.at | canonical(tz) }}</td>
+      <td>{% if r.actor_name %}{{ r.actor_name }}{% if r.actor_title %}, {{ r.actor_title }}{% endif %}{% else %}Not recorded{% endif %}</td>
+      <td>
+        {% if r.kind == "captured" %}Record created by a button press. No statutory field was filled by anyone at this point.{% endif %}
+        {% for name, change in r.changes.items() %}
+          <strong>({{ letter_for(name) }}) {{ label_for_field(name) }}</strong>:
+          was {{ change["from"] }}; became {{ change["to"] }}.<br>
+        {% endfor %}
+        {% if r.note %}{{ r.note }}{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="block certify">
+  <div class="mark">
+    <span class="no">{{ blocks | length + 1 }}.</span>
+    {#- A certification is an assertion by the person who signs it, so it
+        carries the same marker as every other thing a person asserted. -#}
+    <span class="basis">REPORTED</span>
+    <span class="src">The person signing below</span>
+  </div>
+  <div class="body">
+    <p>I have examined this record. The entries are true, accurate and complete
+      to the best of my knowledge. I understand that knowingly recording false
+      information in a violent incident log may expose this employer to
+      penalties under Labor Code 6401.9(g).</p>
+    <p class="rule-line tnum">Signature ______________________ &nbsp;
+      Name ______________________ &nbsp;
+      Job title ______________________ &nbsp;
+      Date __________</p>
+  </div>
+</div>
+
+{% if exhibits %}
+<section class="sheet-break">
+  <h2>Exhibit list and integrity manifest</h2>
+  <p>Each SHA-256 below was computed by this software over the bytes of the
+    file exactly as written to disk at capture. It shows whether the file has
+    changed since {{ generated_display }}. It is not evidence of what the
+    camera was pointed at, and it is not a signature by any third party.</p>
+
+  <table class="manifest">
+    <thead>
+      <tr><th>Ref</th><th>Item</th><th>Size</th><th>SHA-256</th></tr>
+    </thead>
+    <tbody>
+      {% for e in exhibits %}
+      <tr>
+        <td class="id">{{ e.ref }}</td>
+        <td>{{ e.name }}{% if e.media_type %} &middot; {{ e.media_type }}{% endif %}<br>{{ e.description }}</td>
+        {#- A gap row has no file behind it, so it says so in words. "None"
+            is a programming language's word, not a document's. -#}
+        <td class="tnum">{% if e.size_bytes is not none %}{{ "{:,}".format(e.size_bytes) }} bytes{% else %}Not applicable{% endif %}</td>
+        <td class="hash">{% if e.sha256 %}{{ grouped(e.sha256) }}{% else %}Nothing to hash{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="verify">
+    <p>This pack includes <code>manifest.sha256</code>, a plain listing of
+      every file above and the digest recorded for it at the time this log
+      was produced. An investigator or auditor who needs to confirm nothing
+      in this pack has been altered since filing can copy both into an empty
+      directory and run:</p>
+    <pre>sha256sum -c manifest.sha256</pre>
+    <p>Each line prints <code>OK</code> for a file that still matches what
+      was recorded here; any other result names a file that no longer does,
+      which is the fact that matters on a record kept under a legal retention
+      duty. <code>manifest.sha256</code> is written in the standard GNU
+      coreutils layout — the 64-character hash, two spaces, then the
+      filename, one file per line — which is simply the layout
+      <code>sha256sum</code> itself requires, not a format devised for this
+      document.</p>
+  </div>
+</section>
+{% endif %}
+
+</body>
+</html>

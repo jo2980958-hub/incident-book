@@ -1,0 +1,270 @@
+{% extends "_shell.html" %}
+{% set section = 'records' %}
+{% block title %}Complete record {{ incident.incident_id }}{% endblock %}
+{% block topbar_title %}Record {{ incident.incident_id }}{% endblock %}
+
+{% macro amendment_trail(field) %}
+  {% if history.get(field) %}
+  <ul class="amendments">
+    {% for change in history[field] %}
+    <li>Changed {{ change.at | canonical }}{% if change.actor_name %} by {{ change.actor_name }}{% if change.actor_title %}, {{ change.actor_title }}{% endif %}{% endif %}. Was: {{ change.was }}.</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endmacro %}
+
+{% macro legend(letter, ask, quote) %}
+  <legend>
+    <span class="statute-badge" aria-hidden="true">{{ letter }}</span>
+    <span class="ask">{{ ask }}</span>
+  </legend>
+  <span class="statute-cite">Labor Code 6401.9(d)(2)({{ letter }})</span>
+  <p class="quote">{{ quote }}</p>
+{% endmacro %}
+
+{% block main %}
+<div class="page-head">
+  <div>
+    <p class="crumb"><a href="{{ url_for('admin.incident_list') }}">&larr; Records</a></p>
+    <h1>Complete the record</h1>
+    <p class="lede">
+      The date, the time, the camera's location and the evidence were saved
+      when the button was pressed. What is left is the nine questions Labor
+      Code 6401.9(d)(2) asks, in the statute's own order, with its own wording
+      underneath each one.
+    </p>
+    <p class="standing-count">
+      Record {{ incident.incident_id }}. Revision {{ revision }}.
+      {% if missing %}{{ missing | length }} of the nine fields
+        {{ "are" if missing | length != 1 else "is" }} still empty:
+        {% for letter, what in missing %}({{ letter }}){{ ", " if not loop.last }}{% endfor %}.
+      {% else %}Every statutory field has an answer.{% endif %}
+    </p>
+  </div>
+</div>
+
+<section class="panel captured-facts">
+  <h2>What the button captured <span class="basis">Recorded</span></h2>
+  <dl class="kv">
+    <div><dt>Button pressed</dt><dd>{{ incident.tapped_at | canonical(premises.timezone_name) }}</dd></div>
+    <div><dt>Event time</dt><dd>{{ incident.occurred_at | canonical(premises.timezone_name) }}</dd></div>
+    <div><dt>Camera location</dt><dd>{{ incident.location }}</dd></div>
+    <div><dt>What the device reported</dt><dd>{{ incident.event_summary }}</dd></div>
+    <div><dt>Clip</dt>
+    <dd>
+      {{ incident.clip_status }}
+      {% if incident.clip_window_start %}<br>Window: {{ window(incident.clip_window_start, incident.clip_window_end, premises.timezone_name) }}{% endif %}
+      {% if incident.clip_sha256 %}<br><span class="hash">SHA-256 {{ incident.clip_sha256 }}</span>{% endif %}
+    </dd></div>
+  </dl>
+  {% if incident.clip_status != 'attached' and not incident.is_purged %}
+  <form method="post" action="{{ url_for('capture.retry_clip', incident_id=incident.incident_id) }}">
+    <button class="btn btn-quiet" type="submit">Try the clip again</button>
+    <span class="aside">Every attempt, including the ones that fail, stays on
+      the record and is printed in the evidence pack.</span>
+  </form>
+  {% endif %}
+  {% if incident.clip_attempts | length > 1 %}
+  <ul class="attempts">
+    {% for attempt in incident.clip_attempts %}
+    <li>{{ attempt.at | canonical(premises.timezone_name) }}: {{ attempt.outcome }}, {{ attempt.reason }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+{#- Nothing to draft on a purged record: its narrative was removed after
+    five years and the drafts table was emptied with it. -#}
+{% if not incident.is_purged %}
+<section class="panel drafting" id="draft">
+  <h2>Say what happened, and let the software write the first version</h2>
+  <p class="explain">
+    Fields (C) and (H) are the two that have to be written in sentences, and
+    the person who has to write them has just had something happen to them.
+    Type or dictate a few words here and Amazon Bedrock drafts a first
+    version of both. <strong>It is a draft and nothing else.</strong> It goes
+    into the boxes below for you to change, and it only becomes part of the
+    log when you press save with your name against it. Every classification
+    on this page stays yours: the software is not asked who did it, and it is
+    never told to guess.
+  </p>
+  <form method="post" action="{{ url_for('admin.request_draft', incident_id=incident.incident_id) }}">
+    <label for="words">In your own words, a few lines is plenty</label>
+    <textarea id="words" name="words" rows="4"
+      placeholder="a man came over the counter shouting about the till, would not leave when I asked, went when I picked up the phone, I called 911">{{ draft.source_words if draft }}</textarea>
+    <button class="btn btn-quiet" type="submit">Draft the wording</button>
+    <span class="aside">Model: {{ model_name }}. If it cannot be reached your
+      words are kept exactly as typed and you write the rest yourself.</span>
+  </form>
+
+  {% if draft %}
+    {% if draft.status == 'proposed' %}
+    <div class="draft-result">
+      <p class="draft-mark">Drafted by software, not filed.
+        {{ draft.model_id }}, {{ draft.created_at | canonical(premises.timezone_name) }},
+        {{ draft.latency_seconds }} seconds.</p>
+      <p>Read it, change anything that is not right, and press save at the
+        bottom. The record will say whether you edited it or accepted it
+        unchanged, and so will the document.</p>
+      {#- What the log still wants is computed from the record, not asked of
+          the model. A list of model-written questions printed here, in this
+          app's own voice and above the statutory form, could steer the
+          classifications the design keeps human. -#}
+      {% if missing %}
+      <p class="draft-questions">The log still wants these, whatever the
+        draft says:</p>
+      <ul class="draft-questions-list">
+        {% for letter, what in missing %}<li>({{ letter }}) {{ what }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="draft-result draft-fallback">
+      <p class="draft-mark">No draft was produced.</p>
+      <p>{{ draft.note }}</p>
+      <p>Your words are in the description box below, exactly as you typed
+        them. Nothing was lost.</p>
+    </div>
+    {% endif %}
+  {% endif %}
+</section>
+{% endif %}
+
+{% if incident.is_purged %}
+<p class="purged-note">This record passed its five years and was purged on
+  {{ incident.purged_at | canonical(premises.timezone_name) }}. The dates,
+  the device and the hashes were kept and the narrative was removed. It
+  cannot be edited.</p>
+{% else %}
+
+<form class="statute-form" method="post" action="{{ url_for('admin.save_form', incident_id=incident.incident_id) }}">
+
+  <fieldset>
+    {{ legend("A", "When and where did it happen?", "The date, time, and location of the incident.") }}
+    <p class="prefilled">{{ incident.occurred_at | canonical(premises.timezone_name) }}, at {{ incident.location }}.
+      Filled from the device when the button was pressed, and not editable here.</p>
+    <label for="premises_id">Which premises is this?</label>
+    <select id="premises_id" name="premises_id">
+      <option value="">Not recorded</option>
+      {% for site in sites %}
+      <option value="{{ site.premises_id }}" {% if incident.premises_id == site.premises_id %}selected{% endif %}>{{ site.one_line() }}</option>
+      {% endfor %}
+    </select>
+    {{ amendment_trail("premises_id") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("B", "What type of workplace violence was this?", "The workplace violence type or types involved in the incident. More than one may apply.") }}
+    {% for value, label, quote in violence_types %}
+    <div class="choice">
+      <input type="checkbox" id="v_{{ value }}" name="violence_types" value="{{ value }}"
+             {% if value in incident.violence_types %}checked{% endif %}>
+      <label for="v_{{ value }}"><span class="choice-label">{{ label }}</span>
+        <span class="choice-quote">{{ quote }}</span></label>
+    </div>
+    {% endfor %}
+    {{ amendment_trail("violence_types") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("C", "What happened, in your own words?", "A detailed description of the incident.") }}
+    <textarea name="description" rows="7">{{ incident.description or (draft.description if draft else "") }}</textarea>
+    {% if draft and draft.description and not incident.description %}
+    <p class="field-note">This box holds the software's draft. It is not part
+      of the log until you press save.</p>
+    {% endif %}
+    {{ amendment_trail("description") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("D", "Who committed the violence, if you know?", "A classification of who committed the violence.") }}
+    <p class="field-note">This one is yours, always. The camera cannot tell
+      you who somebody was, and this app will not guess.</p>
+    {% for value, label, quote in perpetrator_classes %}
+    <div class="choice">
+      <input type="radio" id="p_{{ value }}" name="perpetrator_class" value="{{ value }}"
+             {% if incident.perpetrator_class == value %}checked{% endif %}>
+      <label for="p_{{ value }}"><span class="choice-label">{{ label }}</span></label>
+    </div>
+    {% endfor %}
+    {{ amendment_trail("perpetrator_class") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("E", "What were the circumstances at the time?", "A classification of circumstances at the time of the incident. Tick everything that applied.") }}
+    {% for value, label, quote in circumstance_options %}
+    <div class="choice">
+      <input type="checkbox" id="c_{{ value }}" name="circumstances" value="{{ value }}"
+             {% if value in incident.circumstances %}checked{% endif %}>
+      <label for="c_{{ value }}"><span class="choice-label">{{ label }}</span></label>
+    </div>
+    {% endfor %}
+    {{ amendment_trail("circumstances") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("F", "Where exactly did it happen?", "A classification of where the incident occurred.") }}
+    {% for value, label, quote in location_classes %}
+    <div class="choice">
+      <input type="radio" id="l_{{ value }}" name="location_class" value="{{ value }}"
+             {% if incident.location_class == value %}checked{% endif %}>
+      <label for="l_{{ value }}"><span class="choice-label">{{ label }}</span></label>
+    </div>
+    {% endfor %}
+    <label for="location_detail">And in your own words</label>
+    <input type="text" id="location_detail" name="location_detail" value="{{ incident.location_detail }}"
+           placeholder="at the till, on the customer side of the counter">
+    {{ amendment_trail("location_class") }}
+    {{ amendment_trail("location_detail") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("G", "What kind of incident was it?", "The type of incident. More than one may apply.") }}
+    {% for value, label, quote in incident_types %}
+    <div class="choice">
+      <input type="checkbox" id="t_{{ value }}" name="incident_types" value="{{ value }}"
+             {% if value in incident.incident_types %}checked{% endif %}>
+      <label for="t_{{ value }}"><span class="choice-label">{{ label }}</span>
+        <span class="choice-quote">{{ quote }}</span></label>
+    </div>
+    {% endfor %}
+    {{ amendment_trail("incident_types") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("H", "What happened next?", "Consequences of the incident, including whether security or law enforcement was contacted and their response, and actions taken to protect employees from a continuing threat.") }}
+    <label for="consequences_response">Security or law enforcement, and what they did</label>
+    <textarea id="consequences_response" name="consequences_response" rows="4">{{ incident.consequences_response or (draft.consequences_response if draft else "") }}</textarea>
+    <label for="consequences_actions">Anything done to protect people from a continuing threat</label>
+    <textarea id="consequences_actions" name="consequences_actions" rows="3">{{ incident.consequences_actions or (draft.consequences_actions if draft else "") }}</textarea>
+    {{ amendment_trail("consequences_response") }}
+    {{ amendment_trail("consequences_actions") }}
+  </fieldset>
+
+  <fieldset>
+    {{ legend("I", "Who is completing this log?", "Information about the person completing the log, including their name, job title, and the date completed.") }}
+    <label for="completed_by">Name</label>
+    <input type="text" id="completed_by" name="completed_by" value="{{ incident.completed_by }}">
+    <label for="completed_by_title">Job title</label>
+    <input type="text" id="completed_by_title" name="completed_by_title" value="{{ incident.completed_by_title }}">
+    <p class="field-note">The date is taken from the moment the record is
+      first complete. Your name goes on the amendment trail for this save and
+      on the document.</p>
+    {{ amendment_trail("completed_by") }}
+    {{ amendment_trail("completed_by_title") }}
+  </fieldset>
+
+  <div class="save-row">
+    <button class="btn btn-save" type="submit">Save this record</button>
+    <p class="save-note">
+      Saving files it. Anything you change from what is already stored is
+      written to the amendment trail with your name and the time, and the
+      old value is kept. Nothing is ever quietly overwritten.
+      Personal names, addresses, phone numbers and email addresses are
+      removed from the statutory log copy of this record, which Labor Code
+      6401.9(d)(1)(B) requires; the evidence pack keeps them.
+    </p>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "_shell.html" %}
+{% set section = 'retention' %}
+{% block title %}Retention{% endblock %}
+{% block topbar_title %}Retention{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div>
+    <h1>Retention</h1>
+    <p class="lede">
+      Labor Code 6401.9(f)(3): violent incident logs "shall be maintained for a
+      minimum of five years". This page is what an owner points an inspector
+      at. It is also the only place in this app that can delete anything, and
+      it will refuse any record that is not yet five years old.
+    </p>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Where this book stands</h2>
+  <dl class="standing">
+    <div><dt>Held</dt>
+    <dd>{{ position.held }} record{{ "s" if position.held != 1 }}</dd></div>
+    <div><dt>Oldest record created</dt>
+    <dd>{{ position.earliest_created_at | canonical(tz) if position.earliest_created_at else "Nothing has been recorded yet" }}</dd></div>
+    <div><dt>Past five years and eligible for purge</dt>
+    <dd>{{ position.eligible }}</dd></div>
+    <div><dt>Next record to become eligible</dt>
+    <dd>{{ position.next_eligible_at | day(tz) if position.next_eligible_at else "None" }}</dd></div>
+    <div><dt>Already purged</dt>
+    <dd>{{ position.purged }}</dd></div>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2>What can be purged</h2>
+  {% if position.nothing_is_eligible %}
+  <p class="nothing-inline">
+    Nothing is eligible, and that is the expected state of this page for the
+    first five years of a shop's life.
+    {% if position.next_eligible_at %}
+    The first record reaches its five years on
+    {{ position.next_eligible_at | day(tz) }}. Until then there is no control
+    on this page that could remove it, and no setting that changes that.
+    {% endif %}
+  </p>
+  {% else %}
+  <p class="explain">
+    A purge removes the narrative fields and the evidence files and keeps the
+    dates, the premises, the device, the hashes and the amendment trail, so
+    the book still shows that an incident happened on that date. It is an act
+    by a named person, never a timer, and it is written to the ledger below.
+  </p>
+  <ul class="doc-list purge-list">
+    {% for incident in eligible %}
+    <li>
+      <form method="post" action="{{ url_for('manage.purge') }}">
+        <input type="hidden" name="incident_id" value="{{ incident.incident_id }}">
+        <span class="purge-what">
+          {{ incident.incident_id }}, {{ incident.occurred_at | day(tz) }},
+          {{ incident.location }}. Retained until
+          {{ incident.earliest_deletion | day(tz) }}.
+        </span>
+        <label for="by_{{ incident.incident_id }}">Purged by</label>
+        <input type="text" id="by_{{ incident.incident_id }}" name="by" required>
+        <button class="btn btn-quiet" type="submit">Purge this record</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Ledger</h2>
+  <p class="explain">Append only. Nothing in this app edits or removes a row
+    here.</p>
+  {% if ledger %}
+  <ol class="journal">
+    {% for entry in ledger %}
+    <li>
+      <span class="journal-at">{{ entry.at | canonical(tz) }}</span>
+      <div class="journal-body">
+        <span class="journal-who">{{ entry.action }}, record {{ entry.incident_id }}{% if entry.actor_name %}, by {{ entry.actor_name }}{% endif %}</span>
+        <p>{{ entry.note }}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="nothing-inline">Nothing has been purged or retried. The ledger is
+    empty.</p>
+  {% endif %}
+</section>
+{% endblock %}

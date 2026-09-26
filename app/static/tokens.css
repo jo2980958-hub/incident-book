@@ -1,0 +1,76 @@
+/* Incident Book's palette and measurements, vendored from Recourse's
+   `tokens.css` — the actual values, not a reinterpretation of them.
+   Recourse was chosen as the reference: both are a portal for a record a
+   hostile reader goes through later, an inspector here rather than an
+   insurer.
+
+   The shell is a fixed white sidebar, an orange top bar and a light grey
+   ground behind white cards, exactly as Recourse builds it. Orange is the
+   brand — the top bar, the active nav item and the one primary action per
+   screen (on this app, that is the capture button; see style.css). It is
+   never used for urgency, which is why the status scale below leans yellow
+   at `warn` and red at `crit` rather than toward brand orange — a "needs
+   finishing" pill in brand orange would read as a button.
+
+   Recourse vendors no font files of its own: `--sans`, `--serif` and
+   `--mono` are OS font stacks with no @font-face anywhere in its repo. This
+   app's web shell now uses the same three stacks. The four font files this
+   app already vendored (Public Sans, Source Serif 4, IBM Plex Mono 400/600)
+   stay on disk and stay in use, but only by record.css, which renders the
+   statutory log and the evidence pack to PDF and cannot depend on whatever
+   fonts happen to be installed on the machine doing the rendering — a
+   requirement that has nothing to do with which web app the shell looks
+   like. See ATTRIBUTION.md. */
+
+:root {
+  /* -- brand ------------------------------------------------------------ */
+  --brand: #E85D1F;
+  --brand-dark: #C64A12;
+  --brand-soft: #FDF0E8;
+  --brand-line: #F6C9AF;
+  --brand-ink: #FFFFFF;
+
+  /* -- ground and ink ----------------------------------------------------*/
+  --ground: #EFEFEF;
+  --surface: #FFFFFF;
+  --surface-2: #F6F6F6;
+  --line: #E3E3E3;
+  --line-strong: #D3D3D3;
+  --ink: #1C1C1C;
+  --ink-2: #5C5C5C;
+  --ink-3: #8A8A8A;
+
+  /* -- status ------------------------------------------------------------*/
+  --ok: #1F7A4D;      --ok-bg: #EAF6F0;    --ok-line: #BFE2D1;
+  --warn: #B26A00;    --warn-bg: #FFF6E5;  --warn-line: #EFD8A4;
+  --crit: #C0271A;    --crit-bg: #FDECEA;  --crit-line: #F3BFB9;
+  --gone: #4A1213;    --gone-bg: #EDE0E0;  --gone-ink: #F6E6E4;  --gone-line: #6B2523;
+  --unknown: #4B505A; --unknown-bg: #F0F1F3; --unknown-line: #D7DADE;
+
+  /* -- the status strip and the toast ------------------------------------*/
+  --slate: #242B34;
+  --slate-2: #2F3945;
+  --slate-ink: #FFFFFF;
+  --slate-ink-dim: #A7B2BF;
+
+  /* -- shape ---------------------------------------------------------- */
+  --r-sm: 6px; --r: 10px; --r-lg: 12px; --r-pill: 9999px;
+
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+          Arial, 'Noto Sans', sans-serif;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --fs-base: 14px; --lh-base: 21px;
+
+  /* -- the shell ---------------------------------------------------------*/
+  --sidebar-w: 270px;
+  --topbar-h: 68px;
+  --nav-row-h: 46px;
+  --card-pad: 28px;
+  --page-max: 1240px;
+
+  --shadow-card: 0 1px 2px rgba(20,20,20,.05), 0 1px 3px rgba(20,20,20,.04);
+  --shadow-lift: 0 4px 14px rgba(20,20,20,.08), 0 1px 3px rgba(20,20,20,.05);
+  --shadow-pop: 0 14px 40px rgba(20,20,20,.18);
+}

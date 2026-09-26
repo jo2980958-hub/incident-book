@@ -1,0 +1,246 @@
+/* The document stylesheet, for the two things this app hands to somebody
+   else: the statutory violent incident log and the evidence pack.
+
+   Adapted from a print skeleton rendered at A4 and US Letter before it was
+   written down here. The rules it sets
+   that matter most here: no radius, no shadow, no gradient, no colour, no
+   centred text, nothing under 9pt, and a 40mm gutter carrying the paragraph
+   number, the basis marker and the exhibit reference on every row. That
+   gutter is the one structural idea that stops this reading as a printed web
+   page.
+
+   Charter is the text face the reference asks for and is not freely
+   redistributable, so this ships its named fallback, Source Serif 4, under
+   the SIL Open Font License. Public Sans carries the labels and IBM Plex Mono
+   the hashes. All three are served from this app and embedded in the PDF, so
+   the adjuster's copy and ours are the same document. */
+
+:root {
+  --face-text: "Source Serif 4", Charter, Georgia, "Times New Roman", serif;
+  --face-label: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --face-data: "IBM Plex Mono", "DejaVu Sans Mono", "Courier New", monospace;
+
+  --ink: #000000;
+  --paper: #FFFFFF;
+  --tint: #EDEDED;
+  --rule-hair: 0.75pt;
+  --rule-sect: 1pt;
+  --rule-heavy: 2pt;
+
+  --gutter: 40mm;
+  --measure: 118mm;
+  --content: 158mm;
+}
+
+@font-face {
+  font-family: "Public Sans";
+  src: url("fonts/PublicSans.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("fonts/SourceSerif4.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("fonts/IBMPlexMono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("fonts/IBMPlexMono-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: block;
+}
+
+@page {
+  size: A4;
+  margin: 26mm 26mm 20mm 26mm;
+
+  @bottom-left {
+    content: string(form-id);
+    font: 400 8.5pt/11pt "Public Sans", Arial, sans-serif;
+  }
+  @bottom-center {
+    content: "Sheet " counter(page) " of " counter(pages);
+    font: 400 8.5pt/11pt "Public Sans", Arial, sans-serif;
+  }
+  @bottom-right {
+    content: string(record-no);
+    font: 400 8.5pt/11pt "Public Sans", Arial, sans-serif;
+  }
+}
+
+html { font-size: 11pt; }
+
+body {
+  width: var(--content);
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 11pt/15.5pt var(--face-text);
+  font-variant-numeric: lining-nums proportional-nums;
+  text-align: left;
+  hyphens: none;
+  orphans: 3;
+  widows: 3;
+}
+
+h2 {
+  font: 700 8.5pt/11pt var(--face-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 2mm;
+}
+
+/* Masthead ------------------------------------------------------------ */
+
+.masthead {
+  display: grid;
+  grid-template-columns: 92mm 1fr;
+  gap: 0 6mm;
+  border-bottom: var(--rule-heavy) solid var(--ink);
+  padding-bottom: 3mm;
+  margin-bottom: 5mm;
+}
+.masthead h1 { font: 400 16pt/19pt var(--face-text); margin: 0 0 1mm; }
+.masthead .handling { font: 400 10pt/13pt var(--face-text); margin: 0 0 2mm; }
+.masthead .issuer { font: 400 9pt/12pt var(--face-text); margin: 0; }
+.masthead .identity { text-align: right; font: 400 8.5pt/12pt var(--face-label); }
+.masthead .identity dt { display: inline-block; min-width: 22mm; text-align: left; }
+.masthead .identity dd { display: inline; margin: 0; font-weight: 700; }
+.masthead .identity div { white-space: nowrap; }
+
+.record-no { string-set: record-no content(); }
+.form-id { string-set: form-id content(); }
+
+/* Provenance ---------------------------------------------------------- */
+
+.provenance {
+  border: var(--rule-sect) solid var(--ink);
+  padding: 3mm 4mm;
+  margin-bottom: 6mm;
+  break-inside: avoid;
+}
+.provenance dl {
+  display: grid;
+  grid-template-columns: 38mm 1fr;
+  gap: 1.5mm 4mm;
+  margin: 0;
+}
+.provenance dt { font: 400 8.5pt/12pt var(--face-label); margin: 0; }
+.provenance dd { font: 400 9.5pt/13pt var(--face-text); margin: 0; }
+
+/* Gutter and measure -------------------------------------------------- */
+
+.block {
+  display: grid;
+  grid-template-columns: var(--gutter) var(--measure);
+  margin-bottom: 4mm;
+  break-inside: avoid;
+}
+.block > .mark { font: 400 8.5pt/15.5pt var(--face-label); padding-right: 6mm; }
+.block > .mark .no { display: block; font-weight: 700; }
+.block > .mark .basis { display: block; font-weight: 700; letter-spacing: 0.04em; }
+/* The source of a REPORTED claim, or the rule behind an INFERRED one. It
+   sits in the gutter under the marker at the furniture size the reference
+   sets, never smaller: a qualifier set smaller than the claim it qualifies
+   is one the author hoped would not be read. */
+.block > .mark .src { display: block; font-size: 8.5pt; line-height: 11pt; }
+.block > .mark .exh { display: block; font-family: var(--face-data); font-size: 8.5pt; }
+.block > .body > :first-child { margin-top: 0; }
+.block > .body > :last-child { margin-bottom: 0; }
+
+/* Statutory grid ------------------------------------------------------ */
+
+.statutory { width: var(--content); border-collapse: collapse; margin-bottom: 6mm; }
+.statutory th,
+.statutory td {
+  border: var(--rule-hair) solid var(--ink);
+  padding: 2mm 2.5mm;
+  vertical-align: top;
+  text-align: left;
+}
+.statutory th { width: var(--gutter); font: 400 8.5pt/11pt var(--face-label); background: var(--tint); }
+.statutory th .letter { display: block; font-weight: 700; font-size: 11pt; }
+.statutory th .cite { display: block; font-size: 9pt; }
+.statutory th .basis { display: block; font-size: 9pt; font-weight: 700; letter-spacing: 0.04em; margin-top: 1.5mm; }
+.statutory th .src { display: block; font-size: 9pt; line-height: 11.5pt; margin-top: 1mm; }
+.statutory th .prov { display: block; font-size: 9pt; line-height: 11.5pt; margin-top: 1.5mm; }
+.statutory .ask { font: 400 8.5pt/11pt var(--face-label); margin: 0 0 1mm; }
+.statutory .quote { font: 400 9pt/12pt var(--face-text); margin: 0 0 2mm; }
+.statutory .value { font: 400 10.5pt/14pt var(--face-text); margin: 0; white-space: pre-wrap; }
+.statutory .empty { font: 400 9pt/12pt var(--face-label); }
+.statutory ul.options { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 6mm; }
+.statutory ul.options li { font: 400 9pt/13pt var(--face-text); break-inside: avoid; }
+.statutory tr { break-inside: avoid; }
+
+/* Manifest ------------------------------------------------------------ */
+
+.manifest { width: var(--content); border-collapse: collapse; }
+.manifest thead { display: table-header-group; }
+.manifest th {
+  font: 700 8.5pt/11pt var(--face-label);
+  text-align: left;
+  border-bottom: var(--rule-sect) solid var(--ink);
+  padding: 2mm 2.5mm 1.5mm 0;
+}
+.manifest td {
+  border-bottom: var(--rule-hair) solid var(--ink);
+  padding: 2.5mm 2.5mm 2.5mm 0;
+  vertical-align: top;
+  font: 400 10pt/13pt var(--face-text);
+}
+.manifest tr { break-inside: avoid; }
+.manifest .id { font: 700 10pt/13pt var(--face-label); }
+.manifest .tnum { white-space: nowrap; }
+
+.hash {
+  font: 400 9pt/13pt var(--face-data);
+  font-variant-numeric: slashed-zero tabular-nums;
+  white-space: pre;
+}
+
+.verify {
+  border: var(--rule-sect) solid var(--ink);
+  padding: 3mm 4mm;
+  margin-top: 5mm;
+  break-inside: avoid;
+}
+.verify pre { font: 400 9pt/13pt var(--face-data); margin: 2mm 0; white-space: pre-wrap; }
+
+.trail { width: var(--content); border-collapse: collapse; margin-bottom: 6mm; }
+.trail th,
+.trail td {
+  border-bottom: var(--rule-hair) solid var(--ink);
+  padding: 2mm 2.5mm 2mm 0;
+  text-align: left;
+  vertical-align: top;
+  font: 400 9.5pt/13pt var(--face-text);
+}
+.trail th { font: 700 8.5pt/11pt var(--face-label); border-bottom: var(--rule-sect) solid var(--ink); }
+
+time, .tnum { font-variant-numeric: tabular-nums lining-nums slashed-zero; }
+
+.sheet-break { break-before: page; }
+
+.certify p.rule-line { font: 400 10pt/26pt var(--face-text); }
+
+/* Screen preview only ------------------------------------------------- */
+
+@media screen {
+  html { background: #7A7A7A; }
+  body { margin: 20px auto; padding: 26mm 26mm 20mm; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25); }
+}
+@media print {
+  html { background: none; }
+  body { box-shadow: none; padding: 0; }
+}

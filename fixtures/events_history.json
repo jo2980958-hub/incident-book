@@ -1,0 +1,40 @@
+{
+  "_comment": "FIXTURE DATA. Recorded once from the shape documented at developer.amazon.com/docs/ring/api-documentation.html for GET /v1/history/devices/{device_id}/events. Never fetched from a live Ring account. Timestamps are epoch milliseconds and are internally consistent with fixtures/webhook_motion_human.json and consent_granted_at used in tests, not tied to a real calendar date.",
+  "events": [
+    {
+      "event_id": "evt_before_consent_01",
+      "device_id": "dev_counter_cam_01",
+      "event_type": "motion.human",
+      "created_at": 1758400000000,
+      "attributes": {"sub_type": "human"}
+    },
+    {
+      "event_id": "evt_ding_01",
+      "device_id": "dev_counter_cam_01",
+      "event_type": "on_demand",
+      "created_at": 1758500050000,
+      "attributes": {}
+    },
+    {
+      "event_id": "evt_motion_human_01",
+      "device_id": "dev_counter_cam_01",
+      "event_type": "motion.human",
+      "created_at": 1758500100000,
+      "attributes": {"sub_type": "human"}
+    },
+    {
+      "event_id": "evt_motion_human_02",
+      "device_id": "dev_counter_cam_01",
+      "event_type": "motion.human",
+      "created_at": 1758500180000,
+      "attributes": {"sub_type": "human"}
+    },
+    {
+      "event_id": "evt_motion_vehicle_01",
+      "device_id": "dev_backdoor_cam_01",
+      "event_type": "motion.vehicle",
+      "created_at": 1758500400000,
+      "attributes": {"sub_type": "vehicle"}
+    }
+  ]
+}

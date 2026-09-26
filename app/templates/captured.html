@@ -1,0 +1,66 @@
+<!doctype html>
+{#- The confirmation. Two ways on, offered equally, because the person who
+    just pressed the button is not necessarily the person who will answer nine
+    legal questions, and never on the same day. -#}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if practice %}Practice press recorded nothing{% else %}Incident captured{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="capture">
+  <div class="confirm-screen">
+    {% if practice %}
+    <p class="practice-banner" role="status">
+      Practice. Nothing was saved. This is exactly what the screen says when it
+      is real.
+    </p>
+    {% endif %}
+
+    <div class="confirm-card">
+      <p class="confirm-mark" aria-hidden="true">Saved</p>
+      <h1 class="confirm-title">{% if practice %}That is the whole thing.{% else %}Captured.{% endif %}</h1>
+
+      <dl class="confirm-facts">
+        <div><dt>Time of the event</dt>
+        <dd>{{ incident.occurred_at | canonical }}</dd></div>
+        <div><dt>Where the camera is</dt>
+        <dd>{{ incident.location }}</dd></div>
+        <div><dt>Clip</dt>
+        <dd>
+          {% if incident.clip_status == 'attached' %}
+            Attached, source {{ incident.clip_source }}.
+          {% else %}
+            {{ incident.clip_status }}
+          {% endif %}
+        </dd></div>
+        <div><dt>What the camera reported</dt>
+        <dd>{{ incident.event_summary }}</dd></div>
+      </dl>
+
+      {% if not practice %}
+      <div class="confirm-actions">
+        <a class="btn btn-equal" href="{{ url_for('capture.capture_screen') }}">Done, back to the button</a>
+        <a class="btn btn-equal" href="{{ url_for('admin.edit_form', incident_id=incident.incident_id) }}">Add details now</a>
+      </div>
+      <p class="capture-hint">
+        Nothing is lost either way. This record is saved and waiting in
+        <a class="quiet-link" href="{{ url_for('admin.incident_list') }}">past incidents</a>
+        whenever anyone is ready for it.
+      </p>
+      {% else %}
+      <div class="confirm-actions">
+        <a class="btn btn-equal" href="{{ url_for('capture.practice_screen') }}">Practice again</a>
+        <a class="btn btn-equal" href="{{ url_for('capture.capture_screen') }}">Leave practice</a>
+      </div>
+      <p class="capture-hint">
+        For real, this screen offers to take the details now or later, and the
+        record waits either way.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,118 @@
+{% extends "_shell.html" %}
+{% set section = 'review' %}
+{% block title %}Review{% endblock %}
+{% block topbar_title %}Review{% endblock %}
+
+{% macro bars(rows, caption) %}
+  <table class="bars">
+    <caption>{{ caption }}</caption>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <th scope="row">{{ row.label }}</th>
+        <td class="bar-cell">
+          <span class="bar" style="width: {{ (row.percent * 0.9) | round | int }}%"></span>
+          <span class="bar-count">{{ row.count }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endmacro %}
+
+{% block main %}
+<div class="page-head">
+  <div>
+    <h1>Review</h1>
+    <p class="lede">
+      Labor Code 6401.9(d)(1)(B) says the log "shall be reviewed during the
+      periodic reviews of the plan", and (c)(2)(L) says the plan is reviewed
+      at least annually, when a deficiency becomes apparent, and after every
+      workplace violence incident. So reading this book is itself a duty, and
+      this page is the reading.
+    </p>
+    <p class="standing-count">{{ due_note }}</p>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>What the book says</h2>
+  {% if review.total %}
+  <p class="explain">
+    {{ review.total }} record{{ "s" if review.total != 1 }}, of which
+    {{ review.unfinished }} still need{{ "s" if review.unfinished == 1 }}
+    finishing. Everything below is counted from records a person wrote. No
+    model touched this page, and it would be wrong if one did: these are the
+    employer's own findings about the employer's own log, and every one of
+    them can be checked by counting.
+  </p>
+  <ul class="findings">
+    {% for finding in review.findings %}
+    <li>
+      <p class="finding-text">{{ finding.text }}</p>
+      <p class="finding-rule">Rule applied: {{ finding.rule }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+
+  {% if review.weeks_note %}
+  <p class="nothing-inline">{{ review.weeks_note }}</p>
+  {% else %}
+  {{ bars(review.weeks, "Records by week, oldest on the left, last twelve weeks") }}
+  {% endif %}
+  {{ bars(review.hours, "Records by time of day") }}
+  {% if review.circumstances %}
+    {{ bars(review.circumstances, "Circumstances recorded in field (E), out of " ~ review.answered_circumstances ~ " records that answered it") }}
+  {% endif %}
+  {% if review.incident_types %}
+    {{ bars(review.incident_types, "Type of incident, field (G)") }}
+  {% endif %}
+  {% if review.violence_types %}
+    {{ bars(review.violence_types, "Workplace violence type, field (B)") }}
+  {% endif %}
+  {% else %}
+  <p class="nothing-inline">
+    There is nothing in the book to review yet. This page fills itself from
+    the records and invents nothing, so it stays empty until an incident is
+    recorded.
+  </p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Write down that the review happened</h2>
+  <p class="explain">
+    An employer who did the review and cannot show it is in the same position
+    as one who did not. This is the note that says it was done, by whom, and
+    what came of it.
+  </p>
+  {% if error %}<p class="form-refusal" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="{{ url_for('manage.record_review') }}">
+    <div class="grid-2">
+      <span><label for="by">Who did the review</label><input type="text" id="by" name="by" required value="{{ form.get('by', '') if form }}"></span>
+      <span><label for="title">Job title</label><input type="text" id="title" name="title" value="{{ form.get('title', '') if form }}"></span>
+    </div>
+    <label for="note">What came of it</label>
+    <textarea id="note" name="note" rows="3" required
+      placeholder="two of the three incidents were during a single shift; second person on the evening shift from Monday">{{ form.get('note', '') if form }}</textarea>
+    <button class="btn btn-save" type="submit">Record this review</button>
+  </form>
+
+  {% if reviews %}
+  <ol class="journal">
+    {% for entry in reviews %}
+    <li>
+      <span class="journal-at">{{ entry.at | canonical(tz) }}</span>
+      <div class="journal-body">
+        <span class="journal-who">{{ entry.by or "Not recorded" }}{% if entry.title %}, {{ entry.title }}{% endif %}</span>
+        <p>{{ entry.note or "No note was written." }}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="nothing-inline">No review has been recorded yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

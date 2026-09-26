@@ -1,0 +1,128 @@
+{% extends "_shell.html" %}
+{% set section = 'settings' %}
+{% block title %}Settings{% endblock %}
+{% block topbar_title %}Settings{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div>
+    <h1>Settings</h1>
+    <p class="lede">Three decisions, and nothing else. Who keeps this book,
+      what each camera can and cannot see, and whether the software may draft
+      wording for the two free-text fields.</p>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>The premises</h2>
+  <p class="explain">
+    Every document this app produces carries the name and address of the
+    business at the top, because a police officer or an insurer handed a pack
+    with no letterhead cannot tell which shop it came from. An install can
+    hold more than one: an owner with a shop and a unit round the corner
+    keeps one book, not two.
+  </p>
+  {% if sites %}
+  <ul class="doc-list">
+    {% for site in sites %}
+    <li>
+      <strong>{{ site.name or "Unnamed premises" }}</strong>
+      <span class="aside">{{ site.one_line() }}</span>
+      <span class="aside">Times shown in {{ site.timezone_name or "UTC, because no zone has been recorded" }}. Revision {{ site.revision }}.</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="nothing-inline">No premises has been recorded. The button still
+    works and nothing is lost; every document prints <em>premises not
+    recorded</em> until this is filled in.</p>
+  {% endif %}
+
+  {% if error %}<p class="form-refusal" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="{{ url_for('manage.save_premises') }}">
+    <label for="premises_id">Editing</label>
+    <select id="premises_id" name="premises_id">
+      <option value="">Add a new premises</option>
+      {% for site in sites %}
+      <option value="{{ site.premises_id }}" {% if form and form.get('premises_id') == site.premises_id %}selected{% endif %}>{{ site.one_line() }}</option>
+      {% endfor %}
+    </select>
+    <label for="name">Business name, as it should print</label>
+    <input type="text" id="name" name="name" required
+      value="{{ form.get('name', '') if form }}">
+    <label for="legal_entity">Legal entity, if different</label>
+    <input type="text" id="legal_entity" name="legal_entity" value="{{ form.get('legal_entity', '') if form }}">
+    <label for="address_line1">Address</label>
+    <input type="text" id="address_line1" name="address_line1" value="{{ form.get('address_line1', '') if form }}">
+    <input type="text" id="address_line2" name="address_line2" value="{{ form.get('address_line2', '') if form }}" aria-label="Address, second line">
+    <div class="grid-3">
+      <span><label for="city">City</label><input type="text" id="city" name="city" value="{{ form.get('city', '') if form }}"></span>
+      <span><label for="state">State</label><input type="text" id="state" name="state" value="{{ form.get('state', '') if form }}"></span>
+      <span><label for="postal_code">ZIP</label><input type="text" id="postal_code" name="postal_code" value="{{ form.get('postal_code', '') if form }}"></span>
+    </div>
+    <label for="establishment_id">Establishment ID, if you have one</label>
+    <input type="text" id="establishment_id" name="establishment_id" value="{{ form.get('establishment_id', '') if form }}">
+    <label for="timezone_name">Time zone</label>
+    <select id="timezone_name" name="timezone_name">
+      {% for value, label in zones %}
+      <option value="{{ value }}" {% if form and form.get('timezone_name') == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <p class="field-note">Ring timestamps carry no local offset. Without a
+      zone every document prints UTC and says so, rather than assuming a
+      local time it cannot know.</p>
+    <button class="btn btn-save" type="submit">Save this premises</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>What each camera can see</h2>
+  <p class="explain">
+    Ring tells us where a camera is registered and nothing about what it
+    cannot see. A record that never says where the blind spots are invites a
+    reader to treat an absence as evidence. What you write here prints in the
+    provenance block of every document from that camera.
+  </p>
+  {% for device, registration in devices %}
+  <form class="device-form" method="post" action="{{ url_for('manage.save_device') }}">
+    <input type="hidden" name="device_id" value="{{ device.device_id }}">
+    <h3>{{ device.name }}</h3>
+    <p class="aside">{{ device.device_id }}. Registered location: {{ device.location }}.
+      {% if device.continuous_recording %}Continuous recording is on, so a clip for a
+      past window can usually be fetched.{% else %}Continuous recording is off on this
+      camera's plan, so a clip for a past window will usually come back as
+      416 TIMESTAMP_NOT_FOUND.{% endif %}</p>
+    <label for="premises_{{ device.device_id }}">Belongs to</label>
+    <select id="premises_{{ device.device_id }}" name="premises_id">
+      <option value="">Not recorded</option>
+      {% for site in sites %}
+      <option value="{{ site.premises_id }}" {% if registration.premises_id == site.premises_id %}selected{% endif %}>{{ site.one_line() }}</option>
+      {% endfor %}
+    </select>
+    <label for="covers_{{ device.device_id }}">What it covers</label>
+    <input type="text" id="covers_{{ device.device_id }}" name="covers" value="{{ registration.covers }}"
+           placeholder="the counter and the doorway">
+    <label for="blind_{{ device.device_id }}">What it does not cover</label>
+    <input type="text" id="blind_{{ device.device_id }}" name="does_not_cover" value="{{ registration.does_not_cover }}"
+           placeholder="the stockroom, the rear door, the pavement">
+    <button class="btn btn-quiet" type="submit">Save this camera</button>
+  </form>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <h2>Drafting</h2>
+  <p class="explain">
+    The software may draft fields (C) and (H) from a few words typed by
+    whoever was there. It never chooses a classification and it never files
+    anything: a person edits and saves, and the record says which of those
+    two happened. Turn it off entirely by starting the app with
+    <code>INCIDENT_BOOK_BEDROCK=off</code>, and everything else works
+    unchanged.
+  </p>
+  <p class="aside">Model in use, or first in the preference chain:
+    <strong>{{ bedrock.model_id }}</strong>. Region {{ bedrock.region }}.
+    Read timeout {{ bedrock.read_timeout }} seconds.</p>
+</section>
+{% endblock %}

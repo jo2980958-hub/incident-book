@@ -1,0 +1,11 @@
+# Runtime
+flask>=3.1,<4
+boto3>=1.40                # the Bedrock boundary in app/bedrock.py
+
+# Tests
+pytest>=8,<10
+
+# PDF export is optional and lives in requirements-pdf.txt, not here, so a
+# missing system dependency for it can never block installing the app or
+# its test suite. See that file's own comment, and README.md's "Run it"
+# section, for why.

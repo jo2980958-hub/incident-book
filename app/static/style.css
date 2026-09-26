@@ -1,0 +1,658 @@
+/* Incident Book, restyled in Recourse's language.
+
+   Reference: Recourse's own `tokens.css`/`styles.css`. Both apps are a
+   portal for a record somebody else reads adversarially later, an
+   inspector here rather than an insurer, which is the reasoning behind the
+   pairing. Palette, shell, type and component values below are read
+   directly off that stylesheet, not approximated from memory of it.
+
+   What this app still does that Recourse gives no pattern for, built in its
+   language rather than invented fresh: the lettered statute fieldsets (the
+   `.statute-item` badge is Recourse's own numbered `.rule-item`, with the
+   letter in place of the counter); the record list's date/time/number
+   gutter (`.record`, built on Recourse's `.deadline-card` two-column card,
+   left band coloured by status rather than by days remaining); the capture
+   screen, which has no chrome at all on either reference and stays that
+   way.
+
+   One deliberate departure, matching Recourse's own rule about itself:
+   brand orange is the primary action and nothing else. On this app there is
+   exactly one primary action per screen almost everywhere, so it is
+   everywhere the capture button, the save button, the one button on the
+   confirmation screen that actually commits to something — never the
+   colour of a status pill, a bar in the review charts, or the `needs
+   finishing` count, which stay in the warn/ok/unknown status colours so a
+   real orange button is never confused with a warning. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p, dl, dd, ol, ul { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: var(--brand-dark); }
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+}
+
+.mono { font-family: var(--mono); font-size: 12px; letter-spacing: -0.01em; }
+.muted { color: var(--ink-3); }
+
+/* ---------------------------------------------------------------------- */
+/* shell: fixed white sidebar, orange top bar, grey ground                  */
+/* ---------------------------------------------------------------------- */
+
+.app-shell { display: flex; min-height: 100%; }
+
+.sidebar {
+  position: fixed; inset: 0 auto 0 0; z-index: 50;
+  width: var(--sidebar-w);
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.side-brand {
+  display: flex; align-items: center; gap: 12px;
+  height: var(--topbar-h); flex: 0 0 var(--topbar-h);
+  padding: 0 24px; border-bottom: 1px solid var(--line);
+  text-decoration: none; color: var(--ink);
+}
+.brand-mark {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
+  background: var(--brand); color: var(--brand-ink);
+  font-family: var(--serif); font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
+}
+.brand-words { display: grid; gap: 1px; min-width: 0; }
+.brand-name { font-size: 16px; font-weight: 660; letter-spacing: -0.015em; }
+.brand-sub { font-size: 11px; color: var(--ink-3); letter-spacing: .02em; }
+
+.side-nav { display: grid; gap: 2px; padding: 18px 14px; }
+.side-nav-item {
+  position: relative;
+  display: flex; align-items: center;
+  height: var(--nav-row-h); padding: 0 14px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2); text-decoration: none;
+  font-size: 14px; font-weight: 520;
+}
+.side-nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.side-nav-item[aria-current="page"] {
+  background: var(--brand-soft); color: var(--brand-dark); font-weight: 620;
+}
+.side-nav-item[aria-current="page"]::before {
+  content: ''; position: absolute; left: 0; top: 9px; bottom: 9px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--brand);
+}
+
+.side-foot {
+  margin-top: auto; padding: 18px 24px 22px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-3); font-size: 12px; line-height: 18px;
+}
+
+.app-column {
+  flex: 1; min-width: 0; margin-left: var(--sidebar-w);
+  display: flex; flex-direction: column; min-height: 100%;
+}
+
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  height: var(--topbar-h); flex: 0 0 var(--topbar-h);
+  padding: 0 28px;
+  background: var(--brand); color: #fff;
+}
+.topbar-label {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em;
+  color: rgba(255,255,255,.72);
+}
+.topbar-title { font-size: 15px; font-weight: 620; }
+.topbar-back {
+  padding: 6px 14px; border: 1px solid rgba(255,255,255,.55); border-radius: var(--r-pill);
+  background: transparent; color: #fff; text-decoration: none;
+  font-size: 12.5px; font-weight: 550;
+}
+.topbar-back:hover { background: rgba(255,255,255,.16); }
+
+.app-main { flex: 1; padding: 30px 28px 80px; }
+.screen-body { max-width: var(--page-max); margin: 0 auto; }
+
+/* ---------------------------------------------------------------------- */
+/* primitives                                                              */
+/* ---------------------------------------------------------------------- */
+
+.page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 28px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.page-head h1 { font-family: var(--serif); font-size: 27px; line-height: 34px; letter-spacing: -0.01em; font-weight: 600; }
+.crumb { margin: 0 0 8px; font-size: 13px; }
+.crumb a { color: var(--ink-3); text-decoration: none; }
+.crumb a:hover { color: var(--brand-dark); }
+.lede { margin-top: 8px; max-width: 76ch; color: var(--ink-2); font-size: 14px; line-height: 21px; }
+.standing-count { margin-top: 10px; font-size: 12.5px; color: var(--ink-3); }
+.standing-count strong { color: var(--warn); }
+
+h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0 0 14px; }
+h3 { font-family: var(--serif); font-size: 16.5px; font-weight: 600; margin: 0 0 6px; }
+.explain { color: var(--ink-2); max-width: 76ch; }
+.aside { color: var(--ink-3); font-size: 12.5px; display: block; }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: var(--card-pad); margin-bottom: 20px; box-shadow: var(--shadow-card);
+}
+.panel-title {
+  font-size: 12px; font-weight: 700; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 18px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13.5px; font-weight: 560; cursor: pointer; text-decoration: none;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+/* Brand orange, and only ever the primary action on a screen. */
+.btn-brand, .btn-save { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.btn-brand:hover, .btn-save:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+.btn-quiet, .btn-equal { background: var(--surface-2); }
+
+.quiet-link { color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+.quiet-link:hover { color: var(--brand-dark); }
+
+.empty-state {
+  padding: 48px 28px; text-align: center;
+  background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--r);
+}
+.empty-state h2 { font-size: 18px; font-weight: 620; }
+.empty-state p { margin: 10px auto 18px; max-width: 58ch; color: var(--ink-2); }
+.empty-state .quiet-link { margin-right: 1.5rem; }
+
+.tag {
+  display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--r-pill);
+  background: var(--surface-2); border: 1px solid var(--line);
+  font-size: 11px; font-weight: 600; color: var(--ink-2); white-space: nowrap;
+}
+.tag-ok { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
+.tag-warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
+.tag-unknown { background: var(--unknown-bg); border-color: var(--unknown-line); color: var(--unknown); }
+
+.field { display: block; margin: 0.9rem 0; }
+.field-inline { display: inline-block; width: auto; }
+label {
+  display: block;
+  font-size: 11px; font-weight: 650; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3);
+  margin: 0.9rem 0 0.3rem;
+}
+input[type="text"], input[type="search"], input[type="date"], select, textarea {
+  width: 100%;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  padding: 9px 12px;
+  font-family: var(--sans);
+  font-size: 14px;
+  min-height: 2.6rem;
+}
+textarea { min-height: 5rem; resize: vertical; line-height: 1.5; }
+
+.kv { display: grid; gap: 10px; }
+.kv > div { display: grid; grid-template-columns: 156px 1fr; gap: 14px; }
+.kv dt { color: var(--ink-3); font-size: 12.5px; }
+.kv dd { color: var(--ink); }
+
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.table td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table tr:last-child td { border-bottom: 0; }
+.table-wrap { overflow-x: auto; }
+
+.callout {
+  display: grid; gap: 5px; padding: 14px 16px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surface-2); margin: 14px 0;
+}
+.callout-ok { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
+.callout-warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
+.callout p, .callout ul { color: var(--ink); }
+.callout ul { margin-top: 5px; display: grid; gap: 4px; }
+.callout li::before { content: '· '; }
+
+/* A form that refused. Warn colour, because nothing has gone wrong: the app
+   declined to write a record it could not stand behind. */
+.form-refusal {
+  max-width: 76ch;
+  margin: 0 0 1.2rem;
+  padding: 12px 16px;
+  border-radius: var(--r);
+  border: 1px solid var(--warn-line);
+  background: var(--warn-bg); color: var(--warn);
+}
+
+.doc-list {
+  display: grid; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+}
+.doc-list li { padding: 14px 16px; background: var(--surface); }
+
+.journal {
+  display: grid; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+}
+.journal li { display: grid; grid-template-columns: 168px 1fr; gap: 18px; padding: 14px 16px; background: var(--surface); }
+.journal-at { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.journal-body { display: grid; gap: 5px; }
+.journal-who { display: block; }
+
+/* ---------------------------------------------------------------------- */
+/* the capture screen: one control, nothing else                          */
+/* ---------------------------------------------------------------------- */
+
+body.capture { height: 100%; background: var(--ground); color: var(--ink); font-family: var(--sans); margin: 0; }
+
+.capture-screen {
+  min-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5vh 3vw 0;
+}
+
+/* Close to the full viewport, so a shaking hand a few seconds after being
+   threatened cannot miss it or need to aim. Brand orange: on this screen
+   there is exactly one control, so it is the primary action Recourse's own
+   rule reserves the brand colour for. */
+.capture-button {
+  width: min(94vw, 960px);
+  height: min(70vh, 780px);
+  min-height: 15rem;
+  border-radius: var(--r-lg);
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  box-shadow: var(--shadow-lift);
+  font-family: var(--sans);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+.capture-button:hover { background: var(--brand-dark); }
+.capture-button:active { transform: scale(0.98); background: var(--brand-dark); }
+
+.is-practice .capture-button {
+  background: var(--surface);
+  color: var(--ink);
+  border: 4px dashed var(--line-strong);
+  box-shadow: none;
+}
+
+.practice-banner {
+  margin: 0;
+  padding: 0.9rem 1.2rem;
+  background: var(--brand-soft);
+  border-bottom: 1px solid var(--brand-line);
+  color: var(--brand-dark);
+  font-size: 13px;
+  text-align: center;
+}
+
+.capture-hint {
+  margin-top: 1.8rem;
+  color: var(--ink-2);
+  text-align: center;
+  max-width: 34rem;
+  font-size: 14px;
+}
+
+.capture-footer {
+  border-top: 1px solid var(--line);
+  margin: 2rem auto 0;
+  padding: 1rem 1.5rem 2rem;
+  max-width: 54rem;
+  text-align: center;
+}
+.capture-footer .counts { margin: 0.4rem 0; color: var(--ink-2); }
+.capture-footer .counts strong { color: var(--warn); }
+.capture-footer .first-run {
+  border-left: 3px solid var(--warn);
+  background: var(--warn-bg);
+  padding: 0.7rem 0.9rem;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  text-align: left;
+  color: var(--warn);
+}
+.capture-footer .first-run a { color: var(--brand-dark); }
+.capture-links { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.6rem; }
+
+/* ---------------------------------------------------------------------- */
+/* confirmation                                                            */
+/* ---------------------------------------------------------------------- */
+
+.confirm-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 4vw;
+  max-width: 44rem;
+  margin: 0 auto;
+}
+.confirm-card {
+  width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card); padding: var(--card-pad);
+}
+.confirm-mark {
+  display: inline-flex;
+  font-family: var(--sans);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--ok);
+  background: var(--ok-bg);
+  border: 1px solid var(--ok-line);
+  border-radius: var(--r-pill);
+  padding: 0.25rem 0.8rem;
+  margin: 0 0 1.2rem;
+}
+.confirm-title { font-family: var(--serif); font-size: 30px; font-weight: 600; margin: 0 0 1.5rem; }
+.confirm-facts {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+  margin: 0 0 2rem;
+}
+.confirm-facts > div { display: grid; grid-template-columns: 12rem 1fr; gap: 0 1.5rem; }
+.confirm-facts dt { color: var(--ink-3); font-size: 12.5px; }
+.confirm-facts dd { margin: 0; }
+
+.confirm-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------------- */
+/* the record list: gutter card, in Recourse's deadline-card language      */
+/* ---------------------------------------------------------------------- */
+
+.finder { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow-card); }
+.finder-row { margin-bottom: 0.4rem; }
+.finder-row label { margin-top: 0; }
+.finder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0 1.2rem; }
+.finder-actions { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+
+.records { display: grid; gap: 16px; }
+.record {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  overflow: hidden; box-shadow: var(--shadow-card);
+}
+.record-gutter {
+  display: grid; align-content: center; justify-items: start; gap: 4px;
+  padding: 20px 18px;
+  background: var(--surface-2); border-right: 1px solid var(--line);
+  font-size: 12.5px; color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.record-purged .record-gutter { background: var(--unknown-bg); }
+.record-todo .record-gutter { background: var(--warn-bg); border-color: var(--warn-line); }
+.record-done .record-gutter { background: var(--ok-bg); border-color: var(--ok-line); }
+.record-date { display: block; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 620; font-size: 14px; }
+.record-clock { display: block; font-variant-numeric: tabular-nums; }
+.record-no { display: block; font-family: var(--mono); font-size: 11px; margin-top: 6px; word-break: break-all; color: var(--ink-3); }
+
+.record-body { padding: 20px 24px 18px; display: grid; gap: 10px; align-content: start; }
+.record-status { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.pill-note { color: var(--ink-3); font-size: 12px; }
+.record-where { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.record-gist { color: var(--ink-2); }
+.record-gist-empty { font-style: italic; color: var(--ink-3); }
+.record-clip { color: var(--ink-3); font-size: 12.5px; }
+.record-actions {
+  display: flex; gap: 1.2rem; flex-wrap: wrap;
+  margin-top: 0.4rem; padding-top: 12px; border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.record-actions a { color: var(--ink-2); text-decoration: none; }
+.record-actions a:hover { color: var(--brand-dark); }
+
+.nothing { max-width: 40rem; }
+.nothing p { color: var(--ink-2); }
+.nothing-inline { color: var(--ink-2); max-width: 76ch; }
+
+/* ---------------------------------------------------------------------- */
+/* the completion form: captured facts (kv) and the statute items          */
+/* (Recourse's numbered .rule-item, the letter standing in for the count)  */
+/* ---------------------------------------------------------------------- */
+
+.captured-facts { margin-bottom: 20px; }
+.captured-facts h2 { display: flex; align-items: baseline; gap: 0.8rem; }
+.captured-facts .basis {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  padding: 0.15rem 0.6rem;
+}
+.captured-facts .kv { margin-bottom: 1rem; }
+.hash { font-family: var(--mono); font-size: 12px; word-break: break-all; color: var(--ink-3); }
+.attempts { color: var(--ink-3); font-size: 12.5px; margin-top: 0.6rem; }
+.attempts li { padding: 0.2rem 0; }
+
+.drafting { margin-bottom: 20px; }
+.draft-result { border-left: 3px solid var(--ok); padding: 0.6rem 0 0.6rem 1rem; margin-top: 1.2rem; background: var(--ok-bg); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.draft-fallback { border-left-color: var(--warn); background: var(--warn-bg); }
+.draft-mark {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0 0 0.4rem;
+  color: var(--ok);
+}
+.draft-fallback .draft-mark { color: var(--warn); }
+.draft-questions { margin-bottom: 0.2rem; }
+.draft-questions-list { margin-top: 0.4rem; color: var(--ink-2); }
+.draft-questions-list li { padding: 0.1rem 0; }
+
+.statute-form fieldset {
+  position: relative;
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--surface); box-shadow: var(--shadow-card);
+  margin: 0 0 16px;
+  padding: 20px 22px;
+}
+/* The badge sits in normal flow, beside the question, so a question long
+   enough to wrap onto a second line never wraps underneath it — the failure
+   mode an absolutely-positioned badge has at phone width. Everything below
+   the legend is indented to the same left edge as the question text
+   (badge width + gap) with a plain margin, which is also what drops away
+   at phone width, in the narrow-screen rules below. */
+.statute-form legend {
+  display: flex; align-items: flex-start; gap: 14px;
+  width: 100%; border: 0; padding: 0 128px 4px 0; margin: 0;
+  box-sizing: border-box;
+}
+.statute-badge {
+  flex: 0 0 auto;
+  display: grid; place-items: center; width: 30px; height: 30px;
+  border-radius: 50%; background: var(--slate); color: #fff;
+  font-family: var(--serif); font-size: 14px; font-weight: 700;
+}
+.statute-cite {
+  position: absolute; right: 22px; top: 24px;
+  color: var(--ink-3); font-size: 11.5px; font-variant-numeric: tabular-nums;
+}
+.statute-form .ask { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.statute-form .quote {
+  font-family: var(--serif);
+  color: var(--ink-2);
+  margin: 4px 0 14px 44px;
+  max-width: 62ch;
+}
+.statute-form .prefilled { color: var(--ink-2); margin: 0 0 0.4rem 44px; }
+.statute-form .field-note { color: var(--ink-3); font-size: 12.5px; max-width: 62ch; margin-left: 44px; }
+.statute-form > fieldset > label,
+.statute-form > fieldset > input,
+.statute-form > fieldset > select,
+.statute-form > fieldset > textarea { margin-left: 44px; width: calc(100% - 44px); }
+
+.choice {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr;
+  gap: 0 0.7rem;
+  align-items: start;
+  padding: 0.4rem 0;
+  margin-left: 44px;
+  max-width: 62ch;
+}
+.choice input { width: 19px; height: 19px; accent-color: var(--brand); margin: 0.15rem 0 0; }
+.choice label { margin: 0; cursor: pointer; text-transform: none; font-weight: 400; letter-spacing: normal; }
+.choice-label { display: block; color: var(--ink); font-size: 14px; }
+.choice-quote { display: block; color: var(--ink-3); font-family: var(--serif); font-size: 12.5px; }
+
+.amendments {
+  margin: 0.6rem 0 0 44px;
+  padding: 0.4rem 0 0 0.9rem;
+  border-left: 2px solid var(--line-strong);
+  color: var(--ink-3);
+  font-size: 12.5px;
+  max-width: 62ch;
+}
+.amendments li { padding: 0.1rem 0; }
+
+.save-row {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 20px 24px; margin-top: 4px; box-shadow: var(--shadow-card);
+}
+.save-note { color: var(--ink-3); font-size: 12.5px; max-width: 76ch; margin-top: 0.9rem; }
+.purged-note { border-left: 3px solid var(--line-strong); background: var(--surface-2); padding: 0.9rem 1rem; border-radius: 0 var(--r-sm) var(--r-sm) 0; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------------- */
+/* settings, review, retention                                             */
+/* ---------------------------------------------------------------------- */
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0 1.2rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0 1.2rem; }
+.site-list, .purge-list, .findings { margin: 0 0 1.4rem; }
+.device-form { border-top: 1px solid var(--line); padding-top: 1.2rem; margin-top: 1.2rem; }
+.device-form:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.findings li { border-top: 1px solid var(--line); padding: 0.8rem 0; }
+.findings .finding-text { margin: 0 0 0.3rem; }
+.findings .finding-rule { margin: 0; color: var(--ink-3); font-size: 12.5px; }
+.purge-what { display: block; margin-bottom: 0.6rem; }
+
+.bars { width: 100%; border-collapse: collapse; margin: 1rem 0 1.6rem; }
+.bars caption {
+  text-align: left;
+  color: var(--ink-3);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding-bottom: 0.6rem;
+}
+.bars th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink-2);
+  font-size: 13px;
+  padding: 0.35rem 1rem 0.35rem 0;
+  width: 16rem;
+}
+.bars td { border-bottom: 1px solid var(--line); padding: 0.35rem 0; }
+.bar-cell { display: flex; align-items: center; gap: 0.6rem; }
+.bar { display: inline-block; height: 0.65rem; min-width: 2px; background: var(--brand-line); border-radius: 2px; }
+.bar-count { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 13px; }
+
+.standing { display: grid; gap: 10px; }
+.standing > div { display: grid; grid-template-columns: 20rem 1fr; gap: 0.35rem 1.5rem; }
+.standing dt { color: var(--ink-3); font-size: 12.5px; }
+.standing dd { margin: 0; }
+
+/* ---------------------------------------------------------------------- */
+/* narrow screens                                                          */
+/* ---------------------------------------------------------------------- */
+
+@media (max-width: 1080px) {
+  .sidebar {
+    position: static; width: auto; inset: auto;
+    border-right: 0; border-bottom: 1px solid var(--line);
+  }
+  .app-shell { flex-direction: column; }
+  .app-column { margin-left: 0; }
+  .side-nav { display: flex; overflow-x: auto; padding: 10px 14px; }
+  .side-nav-item { height: 40px; white-space: nowrap; }
+  .side-nav-item[aria-current="page"]::before { display: none; }
+  .side-foot { display: none; }
+}
+
+@media (max-width: 40rem) {
+  .record { grid-template-columns: 1fr; }
+  .record-gutter { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); justify-items: start; grid-auto-flow: column; grid-auto-columns: max-content; align-items: baseline; gap: 12px; }
+  .confirm-facts > div, .standing > div { grid-template-columns: 1fr; gap: 0.1rem; }
+  .confirm-facts dt, .standing dt { margin-top: 0.6rem; }
+  .kv > div { grid-template-columns: 1fr; gap: 0.1rem; }
+  .kv dt { margin-top: 0.6rem; }
+  .statute-cite { position: static; display: block; margin-bottom: 4px; }
+  .statute-form legend { padding-right: 0; }
+  .statute-form .quote,
+  .statute-form .prefilled,
+  .statute-form .field-note,
+  .choice,
+  .amendments { margin-left: 0; }
+  .statute-form > fieldset > label,
+  .statute-form > fieldset > input,
+  .statute-form > fieldset > select,
+  .statute-form > fieldset > textarea { margin-left: 0; width: 100%; }
+  .page-head { flex-direction: column; align-items: flex-start; }
+  .topbar { padding: 0 16px; }
+  .app-main { padding: 20px 16px 60px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

@@ -1,0 +1,28 @@
+{
+  "devices": [
+    {
+      "device_id": "dev_counter_cam_01",
+      "name": "Counter Camera",
+      "kind": "stick_up_cam",
+      "location": "Front counter, facing till and door",
+      "status": "online",
+      "capabilities": ["video_download", "image_download", "live_view", "motion_detection"],
+      "subscription": {
+        "plan": "ring_protect_pro",
+        "continuous_recording": true
+      }
+    },
+    {
+      "device_id": "dev_backdoor_cam_01",
+      "name": "Back Door Camera",
+      "kind": "spotlight_cam",
+      "location": "Service entrance, rear alley",
+      "status": "online",
+      "capabilities": ["video_download", "image_download", "live_view", "motion_detection"],
+      "subscription": {
+        "plan": "ring_protect_basic",
+        "continuous_recording": false
+      }
+    }
+  ]
+}

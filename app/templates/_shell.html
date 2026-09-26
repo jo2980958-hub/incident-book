@@ -1,0 +1,62 @@
+<!doctype html>
+{#- The shell for every screen that is not the capture button. The capture
+    screen has no chrome at all, on purpose; these do, because the person
+    reading them is working through a book rather than reacting to something.
+
+    Fixed white sidebar, orange top bar, grey ground: Recourse's shell,
+    reproduced at its own measurements (see tokens.css). -#}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Incident Book{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="book">
+  <a class="skip" href="#main">Skip to the page</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="side-brand" href="{{ url_for('capture.capture_screen') }}">
+        <span class="brand-mark" aria-hidden="true">IB</span>
+        <span class="brand-words">
+          <span class="brand-name">Incident Book</span>
+          <span class="brand-sub">Violent incident log</span>
+        </span>
+      </a>
+      <nav class="side-nav" aria-label="Sections">
+        <a class="side-nav-item" href="{{ url_for('admin.incident_list') }}"{% if section == 'records' %} aria-current="page"{% endif %}>
+          <span class="side-nav-label">Records</span>
+        </a>
+        <a class="side-nav-item" href="{{ url_for('manage.plan_review') }}"{% if section == 'review' %} aria-current="page"{% endif %}>
+          <span class="side-nav-label">Review</span>
+        </a>
+        <a class="side-nav-item" href="{{ url_for('manage.retention_screen') }}"{% if section == 'retention' %} aria-current="page"{% endif %}>
+          <span class="side-nav-label">Retention</span>
+        </a>
+        <a class="side-nav-item" href="{{ url_for('manage.settings') }}"{% if section == 'settings' %} aria-current="page"{% endif %}>
+          <span class="side-nav-label">Settings</span>
+        </a>
+      </nav>
+      <p class="side-foot">Violent incident log kept under California Labor
+        Code 6401.9. Every record is retained a minimum of five years from
+        creation, 6401.9(f)(3). Incident Book {{ app_version }}.</p>
+    </aside>
+
+    <div class="app-column">
+      <header class="topbar">
+        <span>
+          <span class="topbar-label">Incident Book</span><br>
+          <span class="topbar-title">{% block topbar_title %}{% endblock %}</span>
+        </span>
+        <a class="topbar-back" href="{{ url_for('capture.capture_screen') }}">Back to the button</a>
+      </header>
+      <main id="main" class="app-main">
+        <div class="screen-body">
+          {% block main %}{% endblock %}
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

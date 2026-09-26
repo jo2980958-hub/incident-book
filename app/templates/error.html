@@ -1,0 +1,25 @@
+{% extends "_shell.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block topbar_title %}{{ heading }}{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div>
+    <h1>{{ heading }}</h1>
+    <p class="lede">{{ detail }}</p>
+    <p class="standing-count">{{ next_step }}</p>
+  </div>
+</div>
+
+<section class="panel">
+  <p class="nothing-inline">
+    Nothing was written. This is a statutory log, so a request it cannot act
+    on is refused rather than guessed at.
+  </p>
+  <p>
+    <a href="{{ url_for('capture.capture_screen') }}">Back to the button</a>
+    &middot;
+    <a href="{{ url_for('admin.incident_list') }}">Records</a>
+  </p>
+</section>
+{% endblock %}

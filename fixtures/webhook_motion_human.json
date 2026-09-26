@@ -1,0 +1,9 @@
+{
+  "_comment": "FIXTURE. Shape matches the webhook event vocabulary documented in Ring's own published API docs: motion_detected with attributes.sub_type. Signed at replay time by tools/replay_webhook.py, never captured from a live Ring account.",
+  "event_type": "motion_detected",
+  "device_id": "dev_counter_cam_01",
+  "created_at": 1758500100000,
+  "attributes": {
+    "sub_type": "human"
+  }
+}

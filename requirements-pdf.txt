@@ -1,0 +1,12 @@
+# Optional. Backs the .pdf export routes only (app/export_pdf.py). Without
+# it, those routes return a named 503 and the same document is served as
+# HTML instead, which prints fine from any browser -- nothing in the statute
+# requires a PDF specifically. Kept out of requirements.txt because
+# WeasyPrint needs Pango and Cairo built on the machine, which a plain
+# `pip install` cannot supply, and a failure installing this must never
+# block installing the app itself or running its tests.
+#
+# WeasyPrint 70 changed the url_fetcher contract this app's PDF renderer
+# depends on, which is why the floor below is pinned to a version that
+# still has it.
+weasyprint>=66

@@ -1,0 +1,66 @@
+<!doctype html>
+{#- The capture screen. No header, no navigation, one control. Everything the
+    app can do that is not this lives one level down, behind a link quiet
+    enough that it has to be looked for. -#}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if practice %}Practice{% else %}Incident Book{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="capture{% if practice %} is-practice{% endif %}">
+  {% if practice %}
+  <p class="practice-banner" role="status">
+    Practice. Press the button as you would for real. Nothing is recorded and
+    no incident is created.
+  </p>
+  {% endif %}
+
+  <div class="capture-screen">
+    <form method="post" action="{{ url_for('capture.tap') }}">
+      <input type="hidden" name="device_id" value="dev_counter_cam_01">
+      {% if practice %}<input type="hidden" name="practice" value="1">{% endif %}
+      <button type="submit" class="capture-button">
+        {% if practice %}Practice press{% else %}Log an incident{% endif %}
+      </button>
+    </form>
+    <p class="capture-hint">
+      Press once. The ninety seconds either side of what the camera saw are
+      saved now. The questions can wait until you are ready for them.
+    </p>
+  </div>
+
+  <div class="capture-footer">
+    {% if first_run %}
+    <p class="first-run">
+      Nobody has told this book which premises it belongs to yet. The button
+      still works and nothing is lost, but every document will print
+      <em>premises not recorded</em> until somebody fills it in.
+      <a class="quiet-link" href="{{ url_for('manage.settings') }}">Set the premises</a>
+    </p>
+    {% endif %}
+    <p class="counts">
+      {% if counts.total %}
+        {{ counts.total }} record{{ "s" if counts.total != 1 }} in the book.
+        {% if counts.needs_finishing %}
+          <strong>{{ counts.needs_finishing }} still need{{ "s" if counts.needs_finishing == 1 }} finishing.</strong>
+        {% else %}
+          All of them are finished.
+        {% endif %}
+      {% else %}
+        No incidents have been recorded yet.
+      {% endif %}
+    </p>
+    <p class="capture-links">
+      <a class="quiet-link" href="{{ url_for('admin.incident_list') }}">Past incidents</a>
+      {% if not practice %}
+      <a class="quiet-link" href="{{ url_for('capture.practice_screen') }}">Practice this</a>
+      {% else %}
+      <a class="quiet-link" href="{{ url_for('capture.capture_screen') }}">Leave practice</a>
+      {% endif %}
+    </p>
+  </div>
+</body>
+</html>
